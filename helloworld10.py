@@ -66,41 +66,65 @@ class mk_socket:
 def testa(var):    
 	dir = os.listdir(path=var)
 	return dir
-def moveinthedirectoryftp(listoffiles,currentdir):  
+def moveinthedirectoryftp(listoffiles,currentdir,auxi='A'):  
 	i= 1;
+	print("0.- ..")
 	for file in listoffiles:
 	   print(str(i) + ".- " + file)
 	   i+=1
-	input_var = input("Write the number of your file plz: ")	
-	currentdir=currentdir+listoffiles[int(input_var) - 1]
-	s = listoffiles[int(input_var) - 1]
-	if s.find(".") < 0:
-		#currentdir += listoffiles[int(input_var) - 1]
-		print ("This is a directory! " + s)
-		sock_main.relay('CWD '+currentdir, 250)
+	print(str((len(listoffiles)+1))+".- Salir")
+	input_var = input("Write the number of your file plz: ")
+	if input_var == '0':
+		CDUP()
+		return ''
+	elif int(input_var) == (len(listoffiles)+1):
+		print("Back to menu it is!")
+		return ''
 	else:
-		recievefile(currentdir, listoffiles[int(input_var) - 1])
-	return s
-def moveinthedirectory(listoffiles,currentdir):  
+		currentdir=currentdir+listoffiles[int(input_var) - 1]
+		s = listoffiles[int(input_var) - 1]
+		if s.find(".") < 0:
+			#currentdir += listoffiles[int(input_var) - 1]
+			print ("This is a directory! " + s)
+			sock_main.relay('CWD '+currentdir, 250)
+		else:
+			if auxi == 'A':
+				recievefile(currentdir, listoffiles[int(input_var) - 1])
+			elif auxi == 'B':
+				changepermission(s)
+			elif auxi == 'X':
+				delete(s)
+			elif auxi == 'Y':
+				rename(s)
+		return s
+def moveinthedirectory(listoffiles,currentdir,auxi='A'):
+	print(auxi)
 	i= 1;
 	print("0.- ...")
 	for file in listoffiles:
 	   print(str(i) + ".- " + file)
 	   i+=1
+	print(str((len(listoffiles)+1))+".- Salir")
 	input_var = input("Write the number of your file plz: ")
 	if input_var == '0':
 		currentdir = gobackadirectory(currentdir)
-		moveinthedirectory(testa(currentdir),currentdir)
+		moveinthedirectory(testa(currentdir),currentdir,auxi)
+	elif int(input_var) == (len(listoffiles)+1):
+		print("Back to menu it is!")
 	else:
-		currentdir=currentdir+listoffiles[int(input_var) - 1]
 		s = listoffiles[int(input_var) - 1]
 		if s.find(".") < 0:
+			currentdir=currentdir+listoffiles[int(input_var) - 1]
 			currentdir += '/'
 			os.chdir( currentdir )
 			print ("This is a directory! " + s)
-			moveinthedirectory(testa(currentdir),currentdir)
+			moveinthedirectory(testa(currentdir),currentdir,auxi)
 		else:
-			sendfile(currentdir, listoffiles[int(input_var) - 1])
+			if auxi == 'A':
+				currentdir=currentdir+listoffiles[int(input_var) - 1]
+				sendfile(currentdir, listoffiles[int(input_var) - 1])
+			elif auxi == 'B':
+				moveinthedirectory(testa(currentdir),currentdir,auxi)
 def howmanytrips(nof):
 	MODE('I')
 	n = sock_main.relay("SIZE " + nof)
@@ -183,6 +207,18 @@ def pasiv():
 	print ("Conexion Pasiva")
 	sock_pasv = mk_socket(2, hostpasivo, portpasivo)
 	return sock_pasv
+def changepermission(pof):
+	print("This is a file I should be able to change it's permissions!")
+	input_var = input("Write the permission for example 744:")
+	sock_main.relay('SITE CHMOD '+input_var + ' ' + pof)
+def rename(pof):#De hecho es delete!
+	print("This is a file I should be able to KILL IT! (Using fire if possible)")
+	sock_main.relay('DELE '+ pof)
+def delete(pof):#De hecho es rename!
+	print("RENAMING!")
+	input_var = input("Write the new name of the file! : ")
+	sock_main.relay('RNFR '+ pof)
+	sock_main.relay('RNTO '+ input_var)
 def listdirectory():
 	sock_pasv = pasiv()
 	msg2 = sock_main.relay('NLST')
@@ -203,6 +239,16 @@ def gobackadirectory(currentdir):
 	return os.getcwd()
 def MODE(m):
 	sock_main.relay('TYPE '+m)
+def FTPCurrentDirectory():
+	var = sock_main.relay('PWD')
+	var = str(var)
+	var = var.split('"')
+	if var[1] == '/':
+		return var[1]
+	else:
+		return var[1]+'/'
+def CDUP():#Change Directory UP
+	sock_main.relay('CDUP')
 def asignarmodocorrecto(filename):
 	mime = mimetypes.guess_type(filename)
 	print (mime)
@@ -224,21 +270,58 @@ def openfile(self, name):
 		piece = f.read(-1)
 		f.close()
 	else:
-		piece = f.read(buff)       
-asignarmodocorrecto("file.mp3")
+		piece = f.read(buff)
+
+		
+
 currentdir = 'C:/'
 os.chdir( currentdir ) 
 currentdirftp = '/' 				
-FTP_PORT = 21
+FTP_PORT = input("Puerto al cual conectarse: ") 
 host='192.100.230.21' 
 user='userftp'
 passwd='r3d3sf1s1c@s'
-sock_main = mk_socket(1, host)
-sock_main.recv()  
+sock_main = mk_socket(1, host,int(FTP_PORT))
+sock_main.recv()
 sock_main.login(user, passwd)
+ans=True
+print(FTPCurrentDirectory())
+while ans:
+	print ("""
+	1.-Send a file
+	2.-Recieve a file or Navigate thru the FTP
+	3.-Change Permissions
+	4.-Listar directorio del FTP
+	5.-Navegar Directorio Local
+	6.-Rename
+	7.-Delete
+	8.-Goodbye
+	""")
+	ans=input("What would you like to do? ") 
+	if ans=="1": 
+		moveinthedirectory(testa(os.getcwd()),os.getcwd())
+	elif ans=="2":
+		moveinthedirectoryftp(listdirectory(),FTPCurrentDirectory())
+	elif ans=="3":
+		moveinthedirectoryftp(listdirectory(),FTPCurrentDirectory(),'B') 
+	elif ans=="4":
+		listdirectory()
+	elif ans=="5":
+		moveinthedirectory(testa(os.getcwd()),os.getcwd(),'B')
+	elif ans=="6":
+		moveinthedirectoryftp(listdirectory(),FTPCurrentDirectory(),'X') 
+	elif ans=="7":
+		moveinthedirectoryftp(listdirectory(),FTPCurrentDirectory(),'Y')
+	elif ans=="8":
+		print("\n Goodbye")		
+		ans=False
+	elif ans !="":
+		print("\n Not Valid Choice Try again")   
+
 #moveinthedirectory(testa(currentdir),currentdir)
-currentdirftp += moveinthedirectoryftp(listdirectory(),currentdirftp)
-listdirectory()
+#currentdirftp += moveinthedirectoryftp(listdirectory(),currentdirftp)
+#currentdirftp += moveinthedirectoryftp(listdirectory(),currentdirftp,'B')#CHMOD
+#listdirectory()
 
 #sock_main.relay('MLSD')
 #sock_pasv.recv()  
