@@ -1,3 +1,4 @@
+#!/opt/python3/bin/python3
 import os
 import sys
 import socket
@@ -64,7 +65,7 @@ class mk_socket:
         self.relay('USER '+ user)
         sock_main.relay('PASS '+passwd, filt=passwd)
 def testa(var):    
-    dir = os.listdir(path=var)
+    dir = os.listdir(var)
     return dir
 def moveinthedirectoryftp(listoffiles,currentdir,auxi='A'):  
     i= 1;
@@ -113,9 +114,9 @@ def moveinthedirectory(listoffiles,currentdir,auxi='A'):
         print("Back to menu it is!")
     else:
         s = listoffiles[int(input_var) - 1]
+        currentdir += '/'
         if s.find(".") < 0:
             currentdir=currentdir+listoffiles[int(input_var) - 1]
-            currentdir += '/'
             os.chdir( currentdir )
             print ("This is a directory! " + s)
             moveinthedirectory(testa(currentdir),currentdir,auxi)
@@ -274,13 +275,13 @@ def openfile(self, name):
 
         
 
-currentdir = 'C:/'
+currentdir = os.getcwd()
 os.chdir( currentdir ) 
 currentdirftp = '/'                 
 FTP_PORT = input("Puerto al cual conectarse: ") 
-host='192.100.230.21' 
-user='userftp'
-passwd='r3d3sf1s1c@s'
+host=  input("host: ")
+user= input("user: ")
+passwd= input("passwd: ")
 sock_main = mk_socket(1, host,int(FTP_PORT))
 sock_main.recv()
 sock_main.login(user, passwd)
@@ -317,16 +318,3 @@ while ans:
         ans=False
     elif ans !="":
         print("\n Not Valid Choice Try again")   
-
-#moveinthedirectory(testa(currentdir),currentdir)
-#currentdirftp += moveinthedirectoryftp(listdirectory(),currentdirftp)
-#currentdirftp += moveinthedirectoryftp(listdirectory(),currentdirftp,'B')#CHMOD
-#listdirectory()
-
-#sock_main.relay('MLSD')
-#sock_pasv.recv()  
-
-#print (msg)
-#newip, newport = self.handle.parse_pasv(msg)
-# make passive connection
-#self.sock_pasv = mk_socket(2, newip, newport)
